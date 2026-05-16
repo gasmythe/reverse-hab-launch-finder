@@ -1,8 +1,8 @@
-# Reverse HAB Launch Finder
+# Reverse HAB Launch Finder - Debug + Fallback Version
 
-Clean starter repository.
+This version helps debug the live predictor API and keeps the app usable if the live API is blocked.
 
-## File structure
+## Structure
 
 ```text
 package.json
@@ -14,26 +14,44 @@ public/
 
 ## Render settings
 
-Build Command:
+Build command:
 
 ```text
 npm install
 ```
 
-Start Command:
+Start command:
 
 ```text
 node server.js
 ```
 
-## Test after deployment
+## Environment variable
 
-Open your main Render URL. You should see the map.
-
-Also test:
+Set this in Render if needed:
 
 ```text
-https://YOUR-RENDER-URL.onrender.com/health
+TAWHIRI_API_URL=https://predict.sondehub.org/api/v1/
 ```
 
-You should see a short JSON message saying the wrapper is running.
+## Test after deploy
+
+Open:
+
+```text
+/YOUR_RENDER_URL/health
+```
+
+It should say:
+
+```text
+Reverse HAB wrapper debug/fallback version is running.
+```
+
+Then open the main URL and click:
+
+```text
+Test one live prediction
+```
+
+If the live predictor is blocked, the app will still run the reverse search using the simple fallback model.

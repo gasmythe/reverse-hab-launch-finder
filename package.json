@@ -1,7 +1,7 @@
 {
-  "name": "reverse-hab-wrapper-clean",
-  "version": "1.0.0",
-  "description": "Reverse high altitude balloon launch finder using Tawhiri/SondeHub forward predictions.",
+  "name": "reverse-hab-wrapper-debug-fallback",
+  "version": "1.1.0",
+  "description": "Reverse HAB launch finder with API test and simple fallback model.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
