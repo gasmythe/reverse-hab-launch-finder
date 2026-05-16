@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reverse HAB Launch Finder - Tawhiri Wrapper</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+
+  <style>
+    :root {
+      --bg: #f7fafc;
+      --card: #ffffff;
+      --ink: #172033;
+      --muted: #667085;
+      --line: #d9e2ec;
+      --accent: #1f6feb;
+      --warn: #92400e;
+      --warn-bg: #fffbeb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    header {
+      padding: 18px 18px 8px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(1.55rem, 4vw, 2.5rem);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      max-width: 880px;
+      line-height: 1.45;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: auto;
+      padding: 10px 18px 24px;
+      display: grid;
+      grid-template-columns: 370px 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
+      overflow: hidden;
+    }
+
+    .panel { padding: 16px; }
+
+    .section-title {
+      margin: 0 0 12px;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+
+    label {
+      display: block;
+      font-size: 0.88rem;
+      margin: 12px 0 5px;
+      color: #344054;
+      font-weight: 600;
+    }
+
+    input {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      font-size: 0.95rem;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 11px 14px;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 14px;
+    }
+
+    button.secondary {
+      background: #eef4ff;
+      color: #1849a9;
+      border: 1px solid #c7d7fe;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #map {
+      height: 540px;
+      width: 100%;
+    }
+
+    .results { padding: 14px; }
+
+    .best {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+    }
+
+    .big {
+      font-size: 1.25rem;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .pill {
+      display: inline-block;
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #ecfdf3;
+      color: #067647;
+      font-weight: 700;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      padding: 8px 6px;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #475467;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .warning {
+      margin-top: 12px;
+      background: var(--warn-bg);
+      color: var(--warn);
+      border: 1px solid #fcd34d;
+      border-radius: 14px;
+      padding: 12px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+
+    .status {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 12px;
+      background: #f2f4f7;
+      color: #344054;
+      font-size: 0.88rem;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 880px) {
+      main { grid-template-columns: 1fr; }
+      #map { height: 420px; }
+      .best { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Reverse HAB Launch Finder</h1>
+    <div class="subtitle">
+      Pick a desired landing spot. This app tests possible launch points and asks Tawhiri/SondeHub-style forward
+      prediction which ones land closest.
+    </div>
+  </header>
+
+  <main>
+    <section class="card panel">
+      <div class="section-title">Desired landing spot</div>
+
+      <div class="grid-two">
+        <div>
+          <label for="targetLat">Latitude</label>
+          <input id="targetLat" type="number" step="0.00001" value="49.03100" />
+        </div>
+        <div>
+          <label for="targetLon">Longitude</label>
+          <input id="targetLon" type="number" step="0.00001" value="-118.44200" />
+        </div>
+      </div>
+
+      <button id="useMapBtn" class="secondary">Click map to set landing spot</button>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;" />
+
+      <div class="section-title">Launch/flight settings</div>
+
+      <label for="launchDatetime">Launch date/time, UTC</label>
+      <input id="launchDatetime" type="datetime-local" />
+
+      <div class="grid-two">
+        <div>
+          <label for="launchAltitude">Launch altitude, m</label>
+          <input id="launchAltitude" type="number" value="520" />
+        </div>
+        <div>
+          <label for="burstAltitude">Burst altitude, m</label>
+          <input id="burstAltitude" type="number" value="30000" />
+        </div>
+      </div>
+
+      <div class="grid-two">
+        <div>
+          <label for="ascentRate">Ascent rate, m/s</label>
+          <input id="ascentRate" type="number" step="0.1" value="5" />
+        </div>
+        <div>
+          <label for="descentRate">Descent rate, m/s</label>
+          <input id="descentRate" type="number" step="0.1" value="7" />
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:18px 0;" />
+
+      <div class="section-title">Reverse search settings</div>
+
+      <div class="grid-two">
+        <div>
+          <label for="searchRadiusKm">Search radius, km</label>
+          <input id="searchRadiusKm" type="number" value="120" />
+        </div>
+        <div>
+          <label for="gridStepKm">Grid step, km</label>
+          <input id="gridStepKm" type="number" value="20" />
+        </div>
+      </div>
+
+      <div class="grid-two">
+        <div>
+          <label for="maxPredictions">Max predictions</label>
+          <input id="maxPredictions" type="number" value="60" />
+        </div>
+        <div>
+          <label for="topN">Results</label>
+          <input id="topN" type="number" value="12" />
+        </div>
+      </div>
+
+      <button id="calculateBtn">Run reverse search</button>
+
+      <div class="status" id="status">
+        Ready. Start coarse: 120 km radius, 20 km grid, 60 predictions.
+      </div>
+
+      <p class="small">
+        This is still experimental. Smaller grid spacing means better results but many more API calls.
+      </p>
+    </section>
+
+    <section>
+      <div class="card">
+        <div id="map"></div>
+      </div>
+
+      <div class="card results" style="margin-top:16px;">
+        <div class="best">
+          <div>
+            <div class="small">Best estimated launch point</div>
+            <div class="big" id="bestCoords">Run reverse search</div>
+            <div class="small" id="bestDetails"></div>
+          </div>
+          <div class="pill" id="bestMiss">—</div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Launch Lat</th>
+              <th>Launch Lon</th>
+              <th>Predicted Landing</th>
+              <th>Miss</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody">
+            <tr><td colspan="5">No results yet.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="warning">
+          <strong>Safety note:</strong> This is not an official flight-safety tool. Confirm any real launch with
+          normal prediction tools, local permissions, airspace rules, land ownership, roads, water, mountains,
+          weather windows, and recovery planning.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <script>
+    let clickMode = false;
+    let targetMarker;
+    let bestMarker;
+    let launchMarkers = [];
+    let landingMarkers = [];
+    let pathLines = [];
+
+    const el = (id) => document.getElementById(id);
+
+    const map = L.map("map").setView([49.031, -118.442], 8);
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    function setDefaultLaunchTime() {
+      const d = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      d.setMinutes(0, 0, 0);
+      const pad = (n) => String(n).padStart(2, "0");
+      const value =
+        d.getUTCFullYear() + "-" +
+        pad(d.getUTCMonth() + 1) + "-" +
+        pad(d.getUTCDate()) + "T" +
+        pad(d.getUTCHours()) + ":" +
+        pad(d.getUTCMinutes());
+      el("launchDatetime").value = value;
+    }
+
+    function getUtcIsoFromDatetimeLocal(value) {
+      if (!value) return new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      return value + ":00Z";
+    }
+
+    function getRequestBody() {
+      return {
+        targetLat: Number(el("targetLat").value),
+        targetLon: Number(el("targetLon").value),
+        launchDatetime: getUtcIsoFromDatetimeLocal(el("launchDatetime").value),
+        launchAltitude: Number(el("launchAltitude").value),
+        ascentRate: Number(el("ascentRate").value),
+        descentRate: Number(el("descentRate").value),
+        burstAltitude: Number(el("burstAltitude").value),
+        searchRadiusKm: Number(el("searchRadiusKm").value),
+        gridStepKm: Number(el("gridStepKm").value),
+        maxPredictions: Number(el("maxPredictions").value),
+        topN: Number(el("topN").value),
+      };
+    }
+
+    function updateTargetMarker() {
+      const body = getRequestBody();
+      const latlng = [body.targetLat, body.targetLon];
+
+      if (!targetMarker) {
+        targetMarker = L.marker(latlng).addTo(map).bindPopup("Desired landing target");
+      } else {
+        targetMarker.setLatLng(latlng);
+      }
+    }
+
+    function clearPredictionLayers() {
+      [...launchMarkers, ...landingMarkers, ...pathLines].forEach((layer) => map.removeLayer(layer));
+      launchMarkers = [];
+      landingMarkers = [];
+      pathLines = [];
+
+      if (bestMarker) {
+        map.removeLayer(bestMarker);
+        bestMarker = null;
+      }
+    }
+
+    function renderResults(data) {
+      clearPredictionLayers();
+      updateTargetMarker();
+
+      const results = data.results || [];
+      const body = el("resultsBody");
+      body.innerHTML = "";
+
+      if (!results.length) {
+        body.innerHTML = "<tr><td colspan='5'>No successful predictions returned.</td></tr>";
+        el("bestCoords").textContent = "No result";
+        el("bestMiss").textContent = "—";
+        el("bestDetails").textContent = "";
+        return;
+      }
+
+      const best = results[0];
+
+      el("bestCoords").textContent = `${best.launch.lat.toFixed(5)}, ${best.launch.lon.toFixed(5)}`;
+      el("bestMiss").textContent = `Miss: ${best.missKm.toFixed(2)} km`;
+      el("bestDetails").textContent =
+        `Tested ${data.totalTested} launch points. API: ${data.settings.predictionApi}`;
+
+      results.forEach((r, index) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${r.launch.lat.toFixed(5)}</td>
+          <td>${r.launch.lon.toFixed(5)}</td>
+          <td>${r.predictedLanding.lat.toFixed(5)}, ${r.predictedLanding.lon.toFixed(5)}</td>
+          <td>${r.missKm.toFixed(2)} km</td>
+        `;
+        body.appendChild(tr);
+
+        const launchMarker = L.circleMarker([r.launch.lat, r.launch.lon], {
+          radius: index === 0 ? 8 : 5,
+          weight: 2,
+          fillOpacity: index === 0 ? 0.9 : 0.45,
+        })
+          .addTo(map)
+          .bindPopup(
+            `Launch option #${index + 1}<br>${r.launch.lat.toFixed(5)}, ${r.launch.lon.toFixed(5)}<br>Miss: ${r.missKm.toFixed(2)} km`
+          );
+
+        const landingMarker = L.circleMarker([r.predictedLanding.lat, r.predictedLanding.lon], {
+          radius: 4,
+          weight: 1,
+          fillOpacity: 0.35,
+        })
+          .addTo(map)
+          .bindPopup(`Predicted landing for option #${index + 1}<br>Miss: ${r.missKm.toFixed(2)} km`);
+
+        const line = L.polyline(
+          [
+            [r.launch.lat, r.launch.lon],
+            [r.predictedLanding.lat, r.predictedLanding.lon],
+          ],
+          { weight: index === 0 ? 3 : 1, opacity: index === 0 ? 0.9 : 0.35 }
+        ).addTo(map);
+
+        launchMarkers.push(launchMarker);
+        landingMarkers.push(landingMarker);
+        pathLines.push(line);
+      });
+
+      bestMarker = L.marker([best.launch.lat, best.launch.lon])
+        .addTo(map)
+        .bindPopup("Best estimated launch point")
+        .openPopup();
+
+      const group = L.featureGroup([targetMarker, bestMarker, ...launchMarkers, ...landingMarkers]);
+      map.fitBounds(group.getBounds().pad(0.2));
+    }
+
+    async function runReverseSearch() {
+      const btn = el("calculateBtn");
+      const status = el("status");
+
+      btn.disabled = true;
+      status.textContent = "Running reverse search. This may take a moment because the app is asking for many forward predictions...";
+
+      try {
+        updateTargetMarker();
+        const response = await fetch("/api/reverse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(getRequestBody()),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Reverse search failed.");
+        }
+
+        renderResults(data);
+
+        const warning =
+          data.failures && data.failures.length
+            ? ` Some predictions failed: ${data.failures[0]}`
+            : "";
+
+        status.textContent =
+          `Done. Tested ${data.totalTested} launch points and found ${data.results.length} ranked options.` + warning;
+      } catch (err) {
+        status.textContent = "Error: " + err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    el("calculateBtn").addEventListener("click", runReverseSearch);
+
+    el("useMapBtn").addEventListener("click", () => {
+      clickMode = true;
+      el("useMapBtn").textContent = "Now click the map...";
+    });
+
+    map.on("click", (e) => {
+      if (!clickMode) return;
+
+      el("targetLat").value = e.latlng.lat.toFixed(5);
+      el("targetLon").value = e.latlng.lng.toFixed(5);
+      clickMode = false;
+      el("useMapBtn").textContent = "Click map to set landing spot";
+
+      updateTargetMarker();
+    });
+
+    ["targetLat", "targetLon"].forEach((id) => {
+      el(id).addEventListener("change", updateTargetMarker);
+    });
+
+    setDefaultLaunchTime();
+    updateTargetMarker();
+  </script>
+</body>
+</html>
