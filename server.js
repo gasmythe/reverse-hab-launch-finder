@@ -267,6 +267,8 @@ app.get("/health", (req, res) => {
   res.json({ ok: true, predictionApi: TAWHIRI_API_URL });
 });
 
+console.log("Server is running")
+
 app.listen(PORT, () => {
   console.log(`Reverse HAB wrapper running on port ${PORT}`);
 });
